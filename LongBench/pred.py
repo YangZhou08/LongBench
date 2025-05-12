@@ -137,7 +137,7 @@ def get_pred(rank, world_size, data, max_length, max_gen, prompt_format, dataset
                     output = future.result() 
                     progress_bar.update(1) 
                     # pred = tokenizer.decode(output[context_length:], skip_special_tokens=True) 
-                    pred = output[context_length:] 
+                    # pred = output[context_length:] 
                     print(colored("printingfull {}".format(pred), "green")) 
                     pred = post_process(pred, model_name)
                     with open(out_path, "a", encoding="utf-8") as f:
