@@ -213,7 +213,7 @@ if __name__ == '__main__':
         get_pred(
             rank = 0, 
             world_size = 1, 
-            data_subsets = data_all, 
+            data = data_all, 
             max_length = max_length, 
             max_gen = max_gen, 
             prompt_format = prompt_format, 
