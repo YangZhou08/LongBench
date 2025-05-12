@@ -50,7 +50,7 @@ def build_chat(tokenizer, prompt, model_name):
         prompt = f"<|User|>:{prompt}<eoh>\n<|Bot|>:" 
     return prompt 
 
-def query_llm(prompt, model, tokenizer, client = None, temperature = 0.5, max_new_tokens = 128, stop = None): 
+def query_llm(prompt, model, tokenizer, client = None, temperature = 0.5, max_new_tokens = 128, stop = None, json_obj = None): 
     
     completion = client.chat.completions.create(
         model = model, 
@@ -58,7 +58,7 @@ def query_llm(prompt, model, tokenizer, client = None, temperature = 0.5, max_ne
         temperature = temperature, 
         max_tokens = max_new_tokens, 
     ) 
-    return completion.choices[0].message.content 
+    return completion.choices[0].message.content, json_obj 
 
 def post_process(response, model_name):
     if "xgen" in model_name:
@@ -116,7 +116,7 @@ def get_pred(rank, world_size, data, max_length, max_gen, prompt_format, dataset
                     #     eos_token_id=[tokenizer.eos_token_id, tokenizer.encode("\n", add_special_tokens=False)[-1]],
                     # )[0] 
                     # output = query_llm(prompt, model_name, tokenizer, client=client, temperature=0.5, max_new_tokens=max_gen) 
-                    future = executor.submit(query_llm, prompt, model_name, tokenizer, client, 0.5, max_gen) 
+                    future = executor.submit(query_llm, prompt, model_name, tokenizer, client, 0.5, max_gen, None, json_obj) 
                     futures.append(future) 
                 else:
                     # output = model.generate(
@@ -127,12 +127,12 @@ def get_pred(rank, world_size, data, max_length, max_gen, prompt_format, dataset
                     #     temperature=1.0,
                     # )[0] 
                     # output = query_llm(prompt, model_name, tokenizer, client=client, temperature=0.5, max_new_tokens=max_gen) 
-                    future = executor.submit(query_llm, prompt, model_name, tokenizer, client, 0.5, max_gen) 
+                    future = executor.submit(query_llm, prompt, model_name, tokenizer, client, 0.5, max_gen, None, json_obj) 
                     futures.append(future) 
                 
             for future in futures: 
                 try: 
-                    output = future.result() 
+                    output, json_obj = future.result() 
                     progress_bar.update(1) 
                     # pred = tokenizer.decode(output[context_length:], skip_special_tokens=True) 
                     # pred = output[context_length:] 
