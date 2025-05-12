@@ -15,12 +15,11 @@ with open(args.local_dir, "r") as file:
 with open("output.csv", "w", newline="") as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(["name", "0-4k", "4-8k", "8k+"])  # header
-    for name, values in data.items():
-        writer.writerow([
-            name,
-            values.get("0-4k", ""),
-            values.get("4-8k", ""),
-            values.get("8k+", "")
-        ])
+    
+    for name, values in data.items(): 
+        print("{},{},{},{}".format(name,
+                values.get("0-4k", ""),
+                values.get("4-8k", ""),
+                values.get("8k+", ""))) 
 
 print("CSV file 'output.csv' has been written.") 
