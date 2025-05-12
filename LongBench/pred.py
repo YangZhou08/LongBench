@@ -80,7 +80,7 @@ def get_pred(rank, world_size, data, max_length, max_gen, prompt_format, dataset
         with ThreadPoolExecutor(max_workers = max_workers) as executor: 
             futures = [] 
             for i in range(max_workers): 
-                if idx + i > len(data): 
+                if idx + i >= len(data): 
                     break 
                 json_obj = data[idx + i] 
                 prompt = prompt_format.format(**json_obj)
