@@ -78,9 +78,9 @@ def get_pred(rank, world_size, data, max_length, max_gen, prompt_format, dataset
     model, tokenizer = load_model_and_tokenizer(model2path[model_name], model_name, device)
     
     progress_bar = tqdm(total = len(data), desc = dataset) 
-    max_workers = 1 
+    max_workers = 32 
     
-    for idx in range(0, 1, max_workers): 
+    for idx in range(0, len(data), max_workers): 
         with ThreadPoolExecutor(max_workers = max_workers) as executor: 
             futures = [] 
             for i in range(max_workers): 
