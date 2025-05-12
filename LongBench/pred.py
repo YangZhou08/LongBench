@@ -102,7 +102,7 @@ def get_pred(rank, world_size, data, max_length, max_gen, prompt_format, dataset
         #         input = prompt.to(device)
         # else:
         #     input = tokenizer(prompt, truncation=False, return_tensors="pt").to(device) 
-        context_length = input.input_ids.shape[-1]
+        # context_length = input.input_ids.shape[-1] 
         if dataset == "samsum": # prevent illegal output on samsum (model endlessly repeat "\nDialogue"), might be a prompting issue
             # output = model.generate(
             #     **input,
