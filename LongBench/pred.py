@@ -73,7 +73,7 @@ def get_pred(rank, world_size, data, max_length, max_gen, prompt_format, dataset
     device = torch.device(f'cuda:{rank}')
     model, tokenizer = load_model_and_tokenizer(model2path[model_name], model_name, device)
     
-    progress_bar = tqdm(total = len(data), desc = "longbench") 
+    progress_bar = tqdm(total = len(data), desc = dataset) 
     max_workers = 16 
     
     for idx in range(0, len(data), max_workers): 
