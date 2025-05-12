@@ -8,7 +8,8 @@ from tqdm import tqdm
 import numpy as np
 import random
 import argparse
-from llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
+from llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn 
+from concurrent.futures import ThreadPoolExecutor 
 import torch.distributed as dist
 import torch.multiprocessing as mp 
 import time 
@@ -20,7 +21,7 @@ def parse_args(args=None):
     parser.add_argument('--e', action='store_true', help="Evaluate on LongBench-E")
     return parser.parse_args(args) 
 
-URL = "http://127.0.0.1:30003/v1" 
+URL = "http://127.0.0.1:30004/v1" 
 API_KEY = "token-abc123" 
 
 # This is the customized building prompt for chat models
@@ -48,25 +49,14 @@ def build_chat(tokenizer, prompt, model_name):
     return prompt 
 
 def query_llm(prompt, model, tokenizer, client = None, temperature = 0.5, max_new_tokens = 128, stop = None): 
-    tries = 0 
-    while tries < 5: 
-        tries += 1 
-        try: 
-            completion = client.chat.completions.create(
-                model = model, 
-                messages = [{"role": "user", "content": prompt}], 
-                temperature = temperature, 
-                max_tokens = max_new_tokens, 
-            ) 
-            return completion.choices[0].message.content 
-        except KeyboardInterrupt as e: 
-            raise e 
-        except Exception as e: 
-            print("Error Occurs: \"%s\"        Retry ..."%(str(e))) 
-            time.sleep(1) 
-    else: 
-        print("Max tries. Failed.") 
-        return '' 
+    
+    completion = client.chat.completions.create(
+        model = model, 
+        messages = [{"role": "user", "content": prompt}], 
+        temperature = temperature, 
+        max_tokens = max_new_tokens, 
+    ) 
+    return completion.choices[0].message.content 
 
 def post_process(response, model_name):
     if "xgen" in model_name:
@@ -82,53 +72,75 @@ def get_pred(rank, world_size, data, max_length, max_gen, prompt_format, dataset
     ) 
     device = torch.device(f'cuda:{rank}')
     model, tokenizer = load_model_and_tokenizer(model2path[model_name], model_name, device)
-    for json_obj in tqdm(data):
-        prompt = prompt_format.format(**json_obj)
-        # truncate to fit max_length (we suggest truncate in the middle, since the left and right side may contain crucial instructions)
-        tokenized_prompt = tokenizer(prompt, truncation=False, return_tensors="pt").input_ids[0]
-        if "chatglm3" in model_name:
-            tokenized_prompt = tokenizer(prompt, truncation=False, return_tensors="pt", add_special_tokens=False).input_ids[0]
-        context_length = len(tokenized_prompt) 
-        if len(tokenized_prompt) > max_length:
-            half = int(max_length/2)
-            prompt = tokenizer.decode(tokenized_prompt[:half], skip_special_tokens=True)+tokenizer.decode(tokenized_prompt[-half:], skip_special_tokens=True) 
-            context_length = max_length 
-        # if dataset not in ["trec", "triviaqa", "samsum", "lsht", "lcc", "repobench-p"]: # chat models are better off without build prompts on these tasks 
-            # prompt = build_chat(tokenizer, prompt, model_name) 
-        # if "chatglm3" in model_name:
-        #     if dataset in ["trec", "triviaqa", "samsum", "lsht", "lcc", "repobench-p"]:
-        #         input = tokenizer(prompt, truncation=False, return_tensors="pt").to(device)
-        #     else:
-        #         input = prompt.to(device)
-        # else:
-        #     input = tokenizer(prompt, truncation=False, return_tensors="pt").to(device) 
-        # context_length = input.input_ids.shape[-1] 
-        if dataset == "samsum": # prevent illegal output on samsum (model endlessly repeat "\nDialogue"), might be a prompting issue
-            # output = model.generate(
-            #     **input,
-            #     max_new_tokens=max_gen,
-            #     num_beams=1,
-            #     do_sample=False,
-            #     temperature=1.0,
-            #     min_length=context_length+1,
-            #     eos_token_id=[tokenizer.eos_token_id, tokenizer.encode("\n", add_special_tokens=False)[-1]],
-            # )[0] 
-            output = query_llm(prompt, model_name, tokenizer, client=client, temperature=0.5, max_new_tokens=max_gen) 
-        else:
-            # output = model.generate(
-            #     **input,
-            #     max_new_tokens=max_gen,
-            #     num_beams=1,
-            #     do_sample=False,
-            #     temperature=1.0,
-            # )[0] 
-            output = query_llm(prompt, model_name, tokenizer, client=client, temperature=0.5, max_new_tokens=max_gen) 
-        # pred = tokenizer.decode(output[context_length:], skip_special_tokens=True) 
-        pred = output[context_length:] 
-        pred = post_process(pred, model_name)
-        with open(out_path, "a", encoding="utf-8") as f:
-            json.dump({"pred": pred, "answers": json_obj["answers"], "all_classes": json_obj["all_classes"], "length": json_obj["length"]}, f, ensure_ascii=False)
-            f.write('\n') 
+    
+    progress_bar = tqdm(total = len(data), desc = "longbench") 
+    max_workers = 16 
+    
+    for idx in range(0, len(data), max_workers): 
+        with ThreadPoolExecutor(max_workers = max_workers) as executor: 
+            futures = [] 
+            for i in range(max_workers): 
+                if idx + i > len(data): 
+                    break 
+                json_obj = data[idx + i] 
+                prompt = prompt_format.format(**json_obj)
+                # truncate to fit max_length (we suggest truncate in the middle, since the left and right side may contain crucial instructions)
+                tokenized_prompt = tokenizer(prompt, truncation=False, return_tensors="pt").input_ids[0]
+                if "chatglm3" in model_name:
+                    tokenized_prompt = tokenizer(prompt, truncation=False, return_tensors="pt", add_special_tokens=False).input_ids[0]
+                context_length = len(tokenized_prompt) 
+                if len(tokenized_prompt) > max_length:
+                    half = int(max_length/2)
+                    prompt = tokenizer.decode(tokenized_prompt[:half], skip_special_tokens=True)+tokenizer.decode(tokenized_prompt[-half:], skip_special_tokens=True) 
+                    context_length = max_length 
+                # if dataset not in ["trec", "triviaqa", "samsum", "lsht", "lcc", "repobench-p"]: # chat models are better off without build prompts on these tasks 
+                    # prompt = build_chat(tokenizer, prompt, model_name) 
+                # if "chatglm3" in model_name:
+                #     if dataset in ["trec", "triviaqa", "samsum", "lsht", "lcc", "repobench-p"]:
+                #         input = tokenizer(prompt, truncation=False, return_tensors="pt").to(device)
+                #     else:
+                #         input = prompt.to(device)
+                # else:
+                #     input = tokenizer(prompt, truncation=False, return_tensors="pt").to(device) 
+                # context_length = input.input_ids.shape[-1] 
+                if dataset == "samsum": # prevent illegal output on samsum (model endlessly repeat "\nDialogue"), might be a prompting issue
+                    # output = model.generate(
+                    #     **input,
+                    #     max_new_tokens=max_gen,
+                    #     num_beams=1,
+                    #     do_sample=False,
+                    #     temperature=1.0,
+                    #     min_length=context_length+1,
+                    #     eos_token_id=[tokenizer.eos_token_id, tokenizer.encode("\n", add_special_tokens=False)[-1]],
+                    # )[0] 
+                    # output = query_llm(prompt, model_name, tokenizer, client=client, temperature=0.5, max_new_tokens=max_gen) 
+                    future = executor.submit(query_llm, args = (prompt, model_name, tokenizer, client, 0.5, max_gen)) 
+                    futures.append(future) 
+                else:
+                    # output = model.generate(
+                    #     **input,
+                    #     max_new_tokens=max_gen,
+                    #     num_beams=1,
+                    #     do_sample=False,
+                    #     temperature=1.0,
+                    # )[0] 
+                    # output = query_llm(prompt, model_name, tokenizer, client=client, temperature=0.5, max_new_tokens=max_gen) 
+                    future = executor.submit(query_llm, args = (prompt, model_name, tokenizer, client, 0.5, max_gen)) 
+                    futures.append(future) 
+                
+            for future in futures: 
+                try: 
+                    output = future.result() 
+                    progress_bar.update(1) 
+                    # pred = tokenizer.decode(output[context_length:], skip_special_tokens=True) 
+                    pred = output[context_length:] 
+                    pred = post_process(pred, model_name)
+                    with open(out_path, "a", encoding="utf-8") as f:
+                        json.dump({"pred": pred, "answers": json_obj["answers"], "all_classes": json_obj["all_classes"], "length": json_obj["length"]}, f, ensure_ascii=False)
+                        f.write('\n') 
+                except Exception as e:
+                    print(f"Error in thread: {e}") 
+    progress_bar.close() 
 
 def seed_everything(seed):
     torch.manual_seed(seed)

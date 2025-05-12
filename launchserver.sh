@@ -5,6 +5,6 @@
 
 python -m sglang.launch_server \
     --model Qwen/Qwen2.5-1.5B-Instruct \
-    --port 30003 \
+    --port 30004 \
     --dp-size 4 \
     --host 0.0.0.0 
