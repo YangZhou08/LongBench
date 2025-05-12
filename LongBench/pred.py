@@ -159,7 +159,7 @@ def load_model_and_tokenizer(path, model_name, device):
         model = model.to(device)
         model = model.bfloat16()
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True, use_fast=False) 
-    elif "qwen" in model_name: 
+    elif "Qwen" in model_name: 
         tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct", trust_remote_code = True) 
         model = None 
     if model != None: 
