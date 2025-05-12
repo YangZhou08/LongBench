@@ -58,6 +58,7 @@ def query_llm(prompt, model, tokenizer, client = None, temperature = 0.5, max_ne
         max_tokens = max_new_tokens, 
     ) 
     print("response: {}".format(completion.choices[0].message.content)) 
+    exit(0) 
     return completion.choices[0].message.content 
 
 def post_process(response, model_name):
