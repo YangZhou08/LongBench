@@ -7,5 +7,6 @@
     "chatglm2-6b-32k": 31500,
     "chatglm3-6b-32k": 31500,
     "vicuna-v1.5-7b-16k": 15500, 
-    "Qwen2.5-1.5B-Instruct": 32000 
+    "Qwen2.5-1.5B-Instruct": 32000, 
+    "Qwen2.5-1.5B-scratch234567_zerocontext": 32000 
 } 
