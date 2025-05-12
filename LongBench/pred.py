@@ -88,9 +88,11 @@ def get_pred(rank, world_size, data, max_length, max_gen, prompt_format, dataset
         tokenized_prompt = tokenizer(prompt, truncation=False, return_tensors="pt").input_ids[0]
         if "chatglm3" in model_name:
             tokenized_prompt = tokenizer(prompt, truncation=False, return_tensors="pt", add_special_tokens=False).input_ids[0]
+        context_length = len(tokenized_prompt) 
         if len(tokenized_prompt) > max_length:
             half = int(max_length/2)
-            prompt = tokenizer.decode(tokenized_prompt[:half], skip_special_tokens=True)+tokenizer.decode(tokenized_prompt[-half:], skip_special_tokens=True)
+            prompt = tokenizer.decode(tokenized_prompt[:half], skip_special_tokens=True)+tokenizer.decode(tokenized_prompt[-half:], skip_special_tokens=True) 
+            context_length = max_length 
         # if dataset not in ["trec", "triviaqa", "samsum", "lsht", "lcc", "repobench-p"]: # chat models are better off without build prompts on these tasks 
             # prompt = build_chat(tokenizer, prompt, model_name) 
         # if "chatglm3" in model_name:
