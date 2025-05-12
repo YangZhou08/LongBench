@@ -1,1 +1,1 @@
-python pred.py --model Qwen/Qwen2.5-1.5B-Instruct --e 
+python pred.py --model Qwen2.5-1.5B-Instruct --e 
