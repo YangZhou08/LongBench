@@ -114,7 +114,7 @@ def get_pred(rank, world_size, data, max_length, max_gen, prompt_format, dataset
                     #     eos_token_id=[tokenizer.eos_token_id, tokenizer.encode("\n", add_special_tokens=False)[-1]],
                     # )[0] 
                     # output = query_llm(prompt, model_name, tokenizer, client=client, temperature=0.5, max_new_tokens=max_gen) 
-                    future = executor.submit(query_llm, args = (prompt, model_name, tokenizer, client, 0.5, max_gen)) 
+                    future = executor.submit(query_llm, prompt, model_name, tokenizer, client, 0.5, max_gen) 
                     futures.append(future) 
                 else:
                     # output = model.generate(
@@ -125,7 +125,7 @@ def get_pred(rank, world_size, data, max_length, max_gen, prompt_format, dataset
                     #     temperature=1.0,
                     # )[0] 
                     # output = query_llm(prompt, model_name, tokenizer, client=client, temperature=0.5, max_new_tokens=max_gen) 
-                    future = executor.submit(query_llm, args = (prompt, model_name, tokenizer, client, 0.5, max_gen)) 
+                    future = executor.submit(query_llm, prompt, model_name, tokenizer, client, 0.5, max_gen) 
                     futures.append(future) 
                 
             for future in futures: 
