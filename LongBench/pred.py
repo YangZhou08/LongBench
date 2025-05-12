@@ -171,7 +171,6 @@ def load_model_and_tokenizer(path, model_name, device):
 if __name__ == '__main__':
     seed_everything(42)
     args = parse_args()
-    world_size = torch.cuda.device_count()
     mp.set_start_method('spawn', force=True)
 
     model2path = json.load(open("config/model2path.json", "r"))
@@ -209,12 +208,25 @@ if __name__ == '__main__':
         prompt_format = dataset2prompt[dataset]
         max_gen = dataset2maxlen[dataset]
         data_all = [data_sample for data_sample in data]
-        data_subsets = [data_all[i::world_size] for i in range(world_size)]
-        processes = []
-        for rank in range(world_size):
-            p = mp.Process(target=get_pred, args=(rank, world_size, data_subsets[rank], max_length, \
-                        max_gen, prompt_format, dataset, device, model_name, model2path, out_path))
-            p.start()
-            processes.append(p)
-        for p in processes:
-            p.join() 
+        # data_subsets = [data_all[i::world_size] for i in range(world_size)] 
+        processes = [] 
+        get_pred(
+            rank = 0, 
+            world_size = 1, 
+            data_subsets = data_all, 
+            max_length = max_length, 
+            max_gen = max_gen, 
+            prompt_format = prompt_format, 
+            dataset = dataset, 
+            device = device, 
+            model_name = model_name, 
+            model2path = model2path, 
+            out_path = out_path, 
+        ) 
+        # for rank in range(world_size):
+        #     p = mp.Process(target=get_pred, args=(rank, world_size, data_subsets[rank], max_length, \
+        #                 max_gen, prompt_format, dataset, device, model_name, model2path, out_path))
+        #     p.start()
+        #     processes.append(p)
+        # for p in processes:
+        #     p.join() 
