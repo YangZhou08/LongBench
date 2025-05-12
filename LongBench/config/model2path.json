@@ -8,5 +8,6 @@
     "chatglm3-6b-32k": "THUDM/chatglm3-6b-32k",
     "vicuna-v1.5-7b-16k": "lmsys/vicuna-7b-v1.5-16k", 
     "Qwen2.5-1.5B-Instruct": "Qwen/Qwen2.5-1.5B-Instruct", 
-    "Qwen2.5-1.5B-scratch234567_zerocontext": "YangZhoumill/scratch_234567_step360" 
+    "Qwen2.5-1.5B-scratch234567_zerocontext": "YangZhoumill/scratch_234567_step360", 
+    "Qwen2.5-1.5B-scratch234567_8k": "YangZhoumill/climb_234567_8k" 
 } 

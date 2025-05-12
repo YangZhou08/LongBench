@@ -11,5 +11,6 @@
     "c4ai-command-r-plus-08-2024": "CohereForAI/c4ai-command-r-plus-08-2024",
     "glm-4-plus": "THUDM/glm-4-9b-chat", 
     "Qwen2.5-1.5B-Instruct": "Qwen/Qwen2.5-1.5B-Instruct", 
-    "Qwen2.5-1.5B-scratch234567_zerocontext": "YangZhoumill/scratch_234567_step360" 
+    "Qwen2.5-1.5B-scratch234567_zerocontext": "YangZhoumill/scratch_234567_step360", 
+    "Qwen2.5-1.5B-scratch234567_8k": "YangZhoumill/climb_234567_8k" 
 } 
