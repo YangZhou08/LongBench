@@ -8,7 +8,8 @@ parser.add_argument("--local_dir", type = str)
 
 args = parser.parse_args() 
 
-data = json.load(args.local_dir) 
+with open(args.local_dir, "r") as file: 
+    data = json.load(file) 
 
 # Output to CSV format
 with open("output.csv", "w", newline="") as csvfile:
