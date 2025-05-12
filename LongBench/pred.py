@@ -52,14 +52,12 @@ def build_chat(tokenizer, prompt, model_name):
 
 def query_llm(prompt, model, tokenizer, client = None, temperature = 0.5, max_new_tokens = 128, stop = None): 
     
-    print(colored("prompt: {}".format(prompt), "cyan")) 
     completion = client.chat.completions.create(
         model = model, 
         messages = [{"role": "user", "content": prompt}], 
         temperature = temperature, 
         max_tokens = max_new_tokens, 
     ) 
-    print(colored("response: {}".format(completion.choices[0].message.content), "yellow")) 
     return completion.choices[0].message.content 
 
 def post_process(response, model_name):
@@ -139,8 +137,7 @@ def get_pred(rank, world_size, data, max_length, max_gen, prompt_format, dataset
                     # pred = tokenizer.decode(output[context_length:], skip_special_tokens=True) 
                     # pred = output[context_length:] 
                     pred = output 
-                    print(colored("printingfull {}".format(pred), "green")) 
-                    pred = post_process(pred, model_name)
+                    pred = post_process(pred, model_name) 
                     with open(out_path, "a", encoding="utf-8") as f:
                         json.dump({"pred": pred, "answers": json_obj["answers"], "all_classes": json_obj["all_classes"], "length": json_obj["length"]}, f, ensure_ascii=False)
                         f.write('\n') 
